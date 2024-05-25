@@ -5,6 +5,7 @@ import os
 from dotenv import load_dotenv
 import logging
 from typing import Optional, Dict, List
+from unify import Unify
 
 # Load environment variables (e.g., API key)
 load_dotenv()
