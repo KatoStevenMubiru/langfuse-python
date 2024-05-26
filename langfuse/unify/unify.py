@@ -2,7 +2,6 @@ import os
 import logging
 from typing import Optional, Dict, List
 
-import requests
 from dotenv import load_dotenv
 from langfuse import Langfuse
 from langfuse.decorators import observe
@@ -11,6 +10,9 @@ from unify import Unify  # Import the Unify library
 # Load environment variables (e.g., API key)
 load_dotenv()
 UNIFY_API_KEY = os.getenv("UNIFY_API_KEY")
+LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY")
+LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY")
+LANGFUSE_HOST = os.getenv("LANGFUSE_HOST", "https://cloud.langfuse.com")
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -33,9 +35,15 @@ class UnifyClient:
             "Content-Type": "application/json"
         }
         self.unify = Unify(api_key=api_key)  # Initialize Unify client
-        self.langfuse = Langfuse(flush_at=5, flush_interval=10000)  # Initialize Langfuse client with batching
+        self.langfuse = Langfuse(
+            secret_key=LANGFUSE_SECRET_KEY,
+            public_key=LANGFUSE_PUBLIC_KEY,
+            host=LANGFUSE_HOST,
+            flush_at=5,
+            flush_interval=10000
+        )  # Initialize Langfuse client with batching
 
-    @observe(name="query_unify")
+    @observe(name="query_unify", as_type="generation")
     def query(self, query_text: str, num_results: int = 5, **kwargs) -> Optional[Dict]:
         """Sends a query to the Unify API and returns the results.
 
@@ -47,51 +55,45 @@ class UnifyClient:
         Returns:
             A dictionary containing the query results, or None if the request failed.
         """
-        trace = self.langfuse.start_trace(name="unify_query")
         try:
-            trace.add_event("query_started", {"query_text": query_text, "num_results": num_results})
             response = self.unify.query(
                 query_text, 
                 model=kwargs.get("model", None),  # Pass model if provided
                 num_results=num_results
             )
-            trace.add_generation("unify_response_received", {
-                "status": "success", 
-                "results_count": len(response.get("results", [])),
-                "query_text": query_text,
-                "num_results": num_results
-            }, prompt=query_text, completion=response)
-            trace.end()
+            self.langfuse.log_event(
+                "unify_response_received",
+                {"status": "success", "results_count": len(response.get("results", []))},
+            )
+            self.langfuse.flush()  # Ensure logs are sent immediately for quick visibility
             return response
         except Exception as e:
-            trace.add_error(e, {
-                "query_text": query_text, 
-                "num_results": num_results, 
-                **kwargs
-            })
-            trace.end()
-            self.langfuse.flush()  # Ensure logs are sent immediately
+            self.langfuse.log_error(
+                e,
+                f"Unify API query failed for query: {query_text}",
+                metadata={"query_text": query_text, "num_results": num_results, **kwargs},
+            )
+            self.langfuse.flush()  # Ensure logs are sent immediately for quick visibility
             return None
 
+    @observe(name="get_endpoint_data")
     def get_endpoint_data(self) -> List[Dict]:
         """Fetches and returns information about available Unify API endpoints.
 
         Returns:
             A list of dictionaries, each containing information about an endpoint.
         """
-        trace = self.langfuse.start_trace(name="get_endpoint_data")
         try:
             # TODO: Implement this method to fetch endpoint data from the Unify API
             # This would likely involve making an API call to a specific Unify endpoint
             # that provides details about available models and their capabilities.
             data = []  # Placeholder for the actual data retrieval logic
-            trace.add_event("endpoints_retrieved", {"endpoint_count": len(data)})
-            trace.end()
+            self.langfuse.log_event("endpoints_retrieved", {"endpoint_count": len(data)})
+            self.langfuse.flush()  # Ensure logs are sent immediately for quick visibility
             return data
         except Exception as e:
-            trace.add_error(e, {"context": "fetching endpoint data"})
-            trace.end()
-            self.langfuse.flush()  # Ensure logs are sent immediately
+            self.langfuse.log_error(e, {"context": "fetching endpoint data"})
+            self.langfuse.flush()  # Ensure logs are sent immediately for quick visibility
             return []
 
 # Example usage:
