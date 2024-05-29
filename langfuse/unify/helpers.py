@@ -12,7 +12,6 @@ class UnifyDefinition:
         self.module = module
         self.object = object
         self.method = method
-        self.type = type
         self.sync = sync
 
 UNIFY_METHODS_V0 = [
