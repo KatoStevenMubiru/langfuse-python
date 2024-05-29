@@ -6,6 +6,26 @@ from traces import TraceManager
 from metadata import MetadataManager
 from tags import TagManager
 
+class UnifyDefinition:
+    endpoint: str
+    model: str
+    provider: str
+    module: str
+    object: str
+    method: str
+    type: str
+    sync: bool
+
+    def __init__(self, endpoint: str, model: str, provider: str, module: str, object: str, method: str, type: str, sync: bool):
+        self.endpoint = endpoint
+        self.model = model
+        self.provider = provider
+        self.module = module
+        self.object = object
+        self.method = method
+        self.type = type
+        self.sync = sync
+
 def main():
     user_manager = UserManager()
     trace_manager = TraceManager()
