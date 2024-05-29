@@ -16,7 +16,7 @@ class UnifyDefinition:
     type: str
     sync: bool
 
-    def __init__(self, endpoint: str, model: str, provider: str, module: str, object: str, method: str, type: str, sync: bool):
+    def __init__(self, module: str, object: str, method: str, type: str, sync: bool):
         self.endpoint = endpoint
         self.model = model
         self.provider = provider
@@ -25,6 +25,30 @@ class UnifyDefinition:
         self.method = method
         self.type = type
         self.sync = sync
+
+UNIFY_METHODS_V0 = [
+    UnifyDefinition(
+        module="unify.chat",
+        object="ChatBot",
+        method="run",
+        type="chat",
+        sync=True,
+    ),
+    UnifyDefinition(
+        module="unify.client",
+        object="Unify",
+        method="generate",
+        type="completion",
+        sync=True,
+    ),
+    UnifyDefinition(
+        module="unify.client",
+        object="AsyncUnify",
+        method="generate",
+        type="completion",
+        sync=False,
+    ),
+]
 
 def main():
     user_manager = UserManager()
