@@ -13,7 +13,6 @@ from langfuse.utils import _get_timestamp
 from langfuse.utils.langfuse_singleton import LangfuseSingleton
 
 class UnifyDefinition:
-    endpoint: str
     model: str
     provider: str
     module: str
@@ -22,11 +21,13 @@ class UnifyDefinition:
     type: str
     sync: bool
 
-    def __init__(self, module: str, object: str, method: str, sync: bool):
+    def __init__(self, module: str, object: str, method: str, sync: bool, model: Optional[str]=None, provider: Optional[str]=None):
         self.module = module
         self.object = object
         self.method = method
         self.sync = sync
+        self.model = model
+        self.provider = provider
 
 # Has yet to be added: model@provider setting and taking it into account in tracing. 
 # It has to be added in UNIFY_METHODS_V0, methods: "set_model", "set_provider".
