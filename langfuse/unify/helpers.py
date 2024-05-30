@@ -1,3 +1,17 @@
+import copy
+import logging
+import types
+from typing import List, Optional
+
+from packaging.version import Version
+from wrapt import wrap_function_wrapper
+
+from langfuse import Langfuse
+from langfuse.client import StatefulGenerationClient
+from langfuse.decorators import langfuse_context
+from langfuse.utils import _get_timestamp
+from langfuse.utils.langfuse_singleton import LangfuseSingleton
+
 class UnifyDefinition:
     endpoint: str
     model: str
@@ -25,6 +39,18 @@ UNIFY_METHODS_V0 = [
         sync=True,
     ),
     UnifyDefinition(
+        module="unify.chat",
+        object="ChatBot",
+        method="set_model",
+        sync=True,
+    ),
+    UnifyDefinition(
+        module="unify.chat",
+        object="ChatBot",
+        method="set_provider",
+        sync=True,
+    ),
+    UnifyDefinition(
         module="unify.client",
         object="Unify",
         method="generate",
@@ -34,6 +60,30 @@ UNIFY_METHODS_V0 = [
         module="unify.client",
         object="AsyncUnify",
         method="generate",
+        sync=False,
+    ),
+    UnifyDefinition(
+        module="unify.client",
+        object="Unify",
+        method="set_model",
+        sync=True,
+    ),
+    UnifyDefinition(
+        module="unify.client",
+        object="AsyncUnify",
+        method="set_model",
+        sync=False,
+    ),
+    UnifyDefinition(
+        module="unify.client",
+        object="Unify",
+        method="set_provider",
+        sync=True,
+    ),
+    UnifyDefinition(
+        module="unify.client",
+        object="AsyncUnify",
+        method="set_provider",
         sync=False,
     ),
 ]
