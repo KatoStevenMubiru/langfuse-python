@@ -13,15 +13,15 @@ from langfuse.utils import _get_timestamp
 from langfuse.utils.langfuse_singleton import LangfuseSingleton
 
 class UnifyDefinition:
-    model: str
-    provider: str
+    model: Optional[str]
+    provider: Optional[str]
     module: str
     object: str
     method: str
     type: str
     sync: bool
 
-    def __init__(self, module: str, object: str, method: str, sync: bool, model: Optional[str]=None, provider: Optional[str]=None):
+    def __init__(self, module: str, object: str, method: str, sync: bool, model: Optional[str] = None, provider: Optional[str] = None):
         self.module = module
         self.object = object
         self.method = method
