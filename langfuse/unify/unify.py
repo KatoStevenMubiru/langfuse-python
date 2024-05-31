@@ -6,6 +6,13 @@ from traces import TraceManager
 from metadata import MetadataManager
 from tags import TagManager
 
+from langfuse.decorators import observe, langfuse_context
+from langfuse.openai import openai # OpenAI integration
+
+class UnifyLangfuse:
+    unify_client = openai.OpenAI(base_url="https://api.unify.ai/v0/")
+
+
 def main():
     user_manager = UserManager()
     trace_manager = TraceManager()
