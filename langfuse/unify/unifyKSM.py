@@ -7,6 +7,7 @@ from langfuse.client import StatefulGenerationClient
 from langfuse.decorators import langfuse_context
 from langfuse.utils import _get_timestamp
 from langfuse.utils.langfuse_singleton import LangfuseSingleton
+from langfuse.openai import openai  # Overriding Unify's OpenAI import
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -36,73 +37,55 @@ UNIFY_METHODS = [
 
 class UnifyArgsExtractor:
     """
-    Class to extract relevant arguments from Unify API calls for Langfuse tracing and monitoring.
+    Class to extract arguments for Unify methods.
     """
-    def __init__(self, **kwargs):
-        self.args = kwargs
+    def __init__(self, module, object, method, *args, **kwargs):
+        self.module = module
+        self.object = object
+        self.method = method
+        self.args = args
+        self.kwargs = kwargs
 
-    def get_langfuse_args(self):
-        """
-        Prepare arguments for Langfuse tracing.
-        """
-        return self.args
+    def extract(self):
+        # Implement argument extraction logic if needed
+        return self.args, self.kwargs
 
-    def get_unify_args(self):
-        """
-        Prepare arguments for Unify API call.
-        """
-        return self.args
-
-def _langfuse_wrapper(func):
+class LangfuseUnifyIntegration:
     """
-    Decorator to wrap Unify methods for integration with Langfuse.
+    Class to integrate Langfuse with Unify.
     """
-    def wrapper(*args, **kwargs):
-        unify_args_extractor = UnifyArgsExtractor(**kwargs)
-        langfuse_args = unify_args_extractor.get_langfuse_args()
-        unify_args = unify_args_extractor.get_unify_args()
-        return func(*args, **unify_args, **langfuse_args)
-    return wrapper
+    def __init__(self):
+        # Using singleton pattern to ensure single instance
+        self.langfuse_client = LangfuseSingleton.get_instance()
+        self.unify = Unify()
 
-class UnifyIntegration:
-    """
-    Handles the integration between Unify API and Langfuse for enhanced monitoring and tracing.
-    """
-    def __init__(self, api_key):
-        """
-        Initialize the Unify client with the provided API key.
-        """
-        self.unify_client = Unify(api_key=api_key)
-
-    @_langfuse_wrapper
-    def generate_response(self, model_id, provider_id, input_text, stream=False):
-        """
-        Generate a response from a specified model and provider using the Unify API.
-        """
-        endpoint = f"{model_id}@{provider_id}"
+    @langfuse_context
+    def generate(self, model: str, *args, **kwargs):
         try:
-            response = self.unify_client.generate(endpoint, input_text, stream=stream)
-            log.info(f"Response retrieved from {endpoint}: {response}")
+            # Parse the model@provider format
+            model_name, provider = model.split('@')
+            
+            # Log the model and provider
+            log.info(f"Using model: {model_name}, provider: {provider}")
+
+            # Call Unify's generate method
+            response = self.unify.generate(model=model_name, *args, **kwargs)
+
+            # Track usage and cost
+            tokens_used = response['usage']['total_tokens']
+            cost_usd = response['usage']['total_cost']
+            self.langfuse_client.track_usage(model=model_name, tokens=tokens_used, cost_usd=cost_usd)
+
             return response
         except Exception as e:
-            log.error(f"Error querying Unify API: {str(e)}")
+            log.error(f"Error in generate method: {e}")
             raise
 
-def main():
-    """
-    Main function to demonstrate the usage of the UnifyIntegration class.
-    """
-    api_key = os.getenv("UNIFY_KEY")
-    if not api_key:
-        raise ValueError("UNIFY_KEY environment variable not set")
-
-    unify_integration = UnifyIntegration(api_key)
-    model_id = "mistral-7b-instruct-v0.2"
-    provider_id = "fireworks-ai"
-    input_text = "Explain who Newton was and his entire theory of gravitation."
-
-    response = unify_integration.generate_response(model_id, provider_id, input_text, stream=True)
-    print(response)
-
+# Example usage
 if __name__ == "__main__":
-    main()
+    langfuse_unify = LangfuseUnifyIntegration()
+    try:
+        response = langfuse_unify.generate(model="gpt-3.5@openai", prompt="Hello, world!")
+        print(response)
+    except Exception as e:
+        log.error(f"Error during example usage: {e}")
