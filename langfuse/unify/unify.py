@@ -55,7 +55,7 @@ class LangfuseUnifyIntegration:
 # Example usage
 if __name__ == "__main__":
     # Retrieve the UNIFY_KEY from the environment variables
-    api_key = os.getenv("UNIFY_KEY")
+    api_key = os.getenv("UNIFY_API_KEY")
     if not api_key:
         raise EnvironmentError("UNIFY_KEY environment variable not set")
 
