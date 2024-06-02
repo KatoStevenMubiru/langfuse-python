@@ -8,7 +8,7 @@ The integration involves overriding Unify's OpenAI import with Langfuse's OpenAI
 
 ## File Structure
 
-- **`unifyKSM.py`**: Main script that implements the integration.
+- **`unify.py`**: Main script that implements the integration.
 - **`unify` module**: The Unify module which contains the methods that will be integrated.
 - **`langfuse` module**: The Langfuse module which includes the client, decorators, and utilities used for integration.
 
@@ -37,7 +37,7 @@ The `UNIFY_KEY` environment variable must be set with your Unify API key. This i
 
 ## Usage
 
-To use the integration, ensure the `UNIFY_KEY` environment variable is set, and then run the `unifyKSM.py` script. An example usage is provided at the end of the script:
+To use the integration, ensure the `UNIFY_KEY` environment variable is set, and then run the `unify.py` script. An example usage is provided at the end of the script:
 
 ```python
 if __name__ == "__main__":
@@ -63,7 +63,7 @@ Install the required modules:
 ## bash
 ```
 pip install unify langfuse
-Place the unifyKSM.py script in your working directory.
+Place the unify.py script in your working directory.
 ```
 ## Set the UNIFY_KEY environment variable:
 
@@ -76,7 +76,7 @@ Run the script using Python:
 
 ## bash
 ```
-python unifyKSM.py
+python unify.py
 ```
 License
 
