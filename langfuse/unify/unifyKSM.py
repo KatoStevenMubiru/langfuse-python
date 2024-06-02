@@ -1,11 +1,9 @@
 import os
 import logging
-import copy
 from unify import Unify
 from langfuse import Langfuse
 from langfuse.client import StatefulGenerationClient
 from langfuse.decorators import langfuse_context
-from langfuse.utils import _get_timestamp
 from langfuse.utils.langfuse_singleton import LangfuseSingleton
 from langfuse.openai import openai  # Overriding Unify's OpenAI import
 
@@ -24,56 +22,29 @@ class UnifyDefinition:
         self.type = type
         self.sync = sync
 
-# Define the methods from Unify that will be integrated
-UNIFY_METHODS = [
-    UnifyDefinition(
-        module="unify",
-        object="Unify",
-        method="generate",
-        type="chat",
-        sync=True,
-    ),
-]
-
-class UnifyArgsExtractor:
-    """
-    Class to extract arguments for Unify methods.
-    """
-    def __init__(self, module, object, method, *args, **kwargs):
-        self.module = module
-        self.object = object
-        self.method = method
-        self.args = args
-        self.kwargs = kwargs
-
-    def extract(self):
-        # Implement argument extraction logic if needed
-        return self.args, self.kwargs
-
 class LangfuseUnifyIntegration:
     """
-    Class to integrate Langfuse with Unify.
+    Class to integrate Langfuse with Unify, enhancing functionality with usage tracking.
     """
-    def __init__(self):
-        # Using singleton pattern to ensure single instance
+    def __init__(self, api_key):
+        # Initialize Langfuse client
         self.langfuse_client = LangfuseSingleton.get_instance()
-        self.unify = Unify()
+        # Initialize Unify with the provided API key
+        self.unify = Unify(api_key=api_key)
 
     @langfuse_context
     def generate(self, model: str, *args, **kwargs):
         try:
             # Parse the model@provider format
             model_name, provider = model.split('@')
-            
-            # Log the model and provider
             log.info(f"Using model: {model_name}, provider: {provider}")
 
             # Call Unify's generate method
             response = self.unify.generate(model=model_name, *args, **kwargs)
 
-            # Track usage and cost
-            tokens_used = response['usage']['total_tokens']
-            cost_usd = response['usage']['total_cost']
+            # Extract usage and cost from the response if available
+            tokens_used = response.get('usage', {}).get('total_tokens', 0)
+            cost_usd = response.get('usage', {}).get('total_cost', 0.0)
             self.langfuse_client.track_usage(model=model_name, tokens=tokens_used, cost_usd=cost_usd)
 
             return response
@@ -83,8 +54,15 @@ class LangfuseUnifyIntegration:
 
 # Example usage
 if __name__ == "__main__":
-    langfuse_unify = LangfuseUnifyIntegration()
+    # Retrieve the UNIFY_KEY from the environment variables
+    api_key = os.getenv("UNIFY_KEY")
+    if not api_key:
+        raise EnvironmentError("UNIFY_KEY environment variable not set")
+
+    # Instantiate the integration class with the API key
+    langfuse_unify = LangfuseUnifyIntegration(api_key)
     try:
+        # Example call to the generate method
         response = langfuse_unify.generate(model="gpt-3.5@openai", prompt="Hello, world!")
         print(response)
     except Exception as e:
