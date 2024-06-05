@@ -136,7 +136,7 @@ class UnifyLangfuse:
             wrap_function_wrapper(
                 resource.module,
                 f"{resource.object}.{resource.method}",
-                _wrap(resource) if resource.sync else _wrap_async(resource)
+                _wrap(resource, self.initialize) if resource.sync else _wrap_async(resource, self.initialize)
             )
 
         setattr(unify, "langfuse_public_key", None)
