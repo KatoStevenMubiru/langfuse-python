@@ -107,7 +107,7 @@ class UnifyLangfuse:
     def flush(cls):
         cls._langfuse.flush()
 
-    @langfuse_context
+    @lobserve()
     def generate(self, model: str, *args, **kwargs):
         try:
             # Parse the model@provider format
