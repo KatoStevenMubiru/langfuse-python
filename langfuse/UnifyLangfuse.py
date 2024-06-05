@@ -94,6 +94,33 @@ UNIFY_METHODS_V0 = [
     ),
 ]
 
+LANGFUSE_DATA = [
+    OpenAiDefinition(
+        module="langfuse",
+        object="openai",
+        method="_get_langfuse_data_from_kwargs",
+        type="",
+        sync=False
+    )
+]
+
+def update_generation_name(wrapped, instance, args, kwargs):
+    def wrapper(*args, **kwargs):
+        generation, is_nested_trace = wrapped(*args, **kwargs)
+        generation["name"] = "Unify-generation"
+
+        return generation, is_nested_trace
+
+    return wrapper(*args, **kwargs)
+
+
+for resource in LANGFUSE_DATA:
+    wrap_function_wrapper(
+        resource.module,
+        f"{resource.object}.{resource.method}",
+        update_generation_name
+    )
+
 class UnifyLangfuse:
     _langfuse: Optional[Langfuse] = None
 
