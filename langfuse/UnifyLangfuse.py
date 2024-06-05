@@ -7,7 +7,7 @@ from langfuse.utils.langfuse_singleton import LangfuseSingleton
 from langfuse.decorators import langfuse_context, observe
 from langfuse import Langfuse
 from langfuse.openai import _wrap_async, _wrap
-import unify
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -17,6 +17,8 @@ log = logging.getLogger("langfuse.unify")
 if importlib.util.find_spec('langfuse.openai') is not None:
     openai = __import__('langfuse.openai', fromlist=[None]).openai
     sys.modules['openai']
+
+import unify
 
 class UnifyDefinition:
     model: Optional[str]
