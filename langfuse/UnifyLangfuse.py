@@ -1,6 +1,7 @@
 import importlib
 import sys
 import logging
+from wrapt import wrap_function_wrapper
 from typing import Optional
 from langfuse.utils.langfuse_singleton import LangfuseSingleton
 from langfuse.decorators import langfuse_context, observe
