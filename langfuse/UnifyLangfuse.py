@@ -3,7 +3,7 @@ import sys
 import logging
 from typing import Optional
 from langfuse.utils.langfuse_singleton import LangfuseSingleton
-from langfuse.decorators import langfuse_context
+from langfuse.decorators import langfuse_context, observe
 from langfuse import Langfuse
 import unify
 
