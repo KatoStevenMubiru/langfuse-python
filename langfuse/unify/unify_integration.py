@@ -1,6 +1,6 @@
 import os
 import logging
-from UnifyLangfuse import unify
+from langfuse.UnifyLangfuse import unify
 from wrapt import wrap_function_wrapper
 from langfuse import Langfuse
 from langfuse.client import StatefulGenerationClient
@@ -11,6 +11,13 @@ from langfuse.openai import openai, OpenAiDefinition, auth_check, _filter_image_
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("langfuse.unify")
+
+try:
+    import unify
+except ImportError:
+    raise ModuleNotFoundError(
+        "Please install unify to use this feature: 'pip install unifyai'"
+    )
 
 class UnifyDefinition:
     """
@@ -52,12 +59,7 @@ class LangfuseUnifyIntegration:
             log.error(f"Error in generate method: {e}")
             raise
 
-try:
-    import unify
-except ImportError:
-    raise ModuleNotFoundError(
-        "Please install unify to use this feature: 'pip install unifyai'"
-    )
+
 
 LANGFUSE_DATA = [
     OpenAiDefinition(
