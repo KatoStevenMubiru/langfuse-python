@@ -28,14 +28,16 @@ class UnifyDefinition:
     method: str
     type: str
     sync: bool
+    type: str
 
-    def __init__(self, module: str, object: str, method: str, sync: bool, model: Optional[str] = None, provider: Optional[str] = None):
+    def __init__(self, module: str, object: str, method: str, sync: bool, model: Optional[str] = None, provider: Optional[str] = None, type: Optional[str] = None):
         self.module = module
         self.object = object
         self.method = method
         self.sync = sync
         self.model = model
         self.provider = provider
+        self.type = type
 
 UNIFY_METHODS_V0 = [
     UnifyDefinition(
