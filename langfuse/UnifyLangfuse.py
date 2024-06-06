@@ -49,13 +49,7 @@ UNIFY_METHODS_V0 = [
     UnifyDefinition(
         module="unify.chat",
         object="ChatBot",
-        method="set_model",
-        sync=True,
-    ),
-    UnifyDefinition(
-        module="unify.chat",
-        object="ChatBot",
-        method="set_provider",
+        method="set_endpoint",
         sync=True,
     ),
     UnifyDefinition(
@@ -73,25 +67,13 @@ UNIFY_METHODS_V0 = [
     UnifyDefinition(
         module="unify.clients",
         object="Unify",
-        method="set_model",
+        method="set_endpoint",
         sync=True,
     ),
     UnifyDefinition(
         module="unify.clients",
         object="AsyncUnify",
-        method="set_model",
-        sync=False,
-    ),
-    UnifyDefinition(
-        module="unify.clients",
-        object="Unify",
-        method="set_provider",
-        sync=True,
-    ),
-    UnifyDefinition(
-        module="unify.clients",
-        object="AsyncUnify",
-        method="set_provider",
+        method="set_endpoint",
         sync=False,
     ),
 ]
