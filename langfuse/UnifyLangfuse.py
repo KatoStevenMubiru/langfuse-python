@@ -6,7 +6,7 @@ from typing import Optional
 from langfuse.utils.langfuse_singleton import LangfuseSingleton
 from langfuse.decorators import langfuse_context, observe
 from langfuse import Langfuse
-from langfuse.openai import _wrap_async, _wrap
+from langfuse.openai import _wrap_async, _wrap, _langfuse_wrapper, _is_openai_v1
 
 
 # Configure logging
@@ -103,6 +103,12 @@ for resource in LANGFUSE_DATA:
         f"{resource.object}.{resource.method}",
         update_generation_name
     )
+
+def _wrap_unify():
+    pass
+
+def _wrap_unify_async():
+    pass
 
 class UnifyLangfuse:
     _langfuse: Optional[Langfuse] = None
