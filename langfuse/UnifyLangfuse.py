@@ -94,6 +94,23 @@ LANGFUSE_DATA = [
     )
 ]
 
+GENERATION_DATA = [    
+    UnifyDefinition(
+        module="unify.clients",
+        object="Unify",
+        method="generate",
+        sync=True,
+        type="completion",
+    ),
+    UnifyDefinition(
+        module="unify.clients",
+        object="AsyncUnify",
+        method="generate",
+        sync=False,
+        type="completion",
+    ),
+]
+
 def update_generation_name(wrapped, instance, args, kwargs):
     def wrapper(*args, **kwargs):
         generation, is_nested_trace = wrapped(*args, **kwargs)
