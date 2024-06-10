@@ -136,12 +136,18 @@ for resource in LANGFUSE_DATA:
     )
 
 
+class Completion(object):
+    def __init__(self, data):
+        for name, value in data.items():
+            setattr(self, name, value)
+
+
 def wrap_unify_outputs(wrapped, instance, args, kwargs):
     def wrapper(*args, **kwargs):
         if resource.type == "completion":
-            output_dict = {"text": wrapped(*args, **kwargs)}
+            output_dict = Completion({"text": wrapped(*args, **kwargs)})
         if resource.type == "chat":
-            output_dict = {"message": wrapped(*args, **kwargs)}
+            output_dict = Completion({"message": wrapped(*args, **kwargs)})
         return output_dict
     return wrapper(*args, **kwargs)
 
