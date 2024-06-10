@@ -128,11 +128,21 @@ for resource in LANGFUSE_DATA:
         update_generation_name
     )
 
-def _wrap_unify():
-    pass
 
-def _wrap_unify_async():
-    pass
+def wrap_unify_outputs(wrapped, instance, args, kwargs):
+    def wrapper(*args, **kwargs):
+        output_dict = wrapped(*args, **kwargs).__dict__
+        return output_dict
+    return wrapper(*args, **kwargs)
+
+
+for resource in GENERATION_DATA:
+    wrap_function_wrapper(
+        resource.module,
+        f"{resource.object}.{resource.method}",
+        wrap_unify_outputs
+    )
+
 
 class UnifyLangfuse:
     _langfuse: Optional[Langfuse] = None
