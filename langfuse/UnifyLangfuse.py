@@ -145,9 +145,9 @@ class Completion(object):
 def wrap_unify_outputs(wrapped, instance, args, kwargs):
     def wrapper(*args, **kwargs):
         if resource.type == "completion":
-            output_dict = Completion({"choices": [{"text": wrapped(*args, **kwargs)}], "usage": {}})
+            output_dict = Completion({"choices": [Completion({"text": wrapped(*args, **kwargs)})], "usage": {}})
         if resource.type == "chat":
-            output_dict = Completion({"choices": [{"message": wrapped(*args, **kwargs)}], "usage": {}})
+            output_dict = Completion({"choices": [Completion({"message": wrapped(*args, **kwargs)})], "usage": {}})
         return output_dict
     return wrapper(*args, **kwargs)
 
