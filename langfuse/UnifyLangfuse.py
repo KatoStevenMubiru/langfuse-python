@@ -6,6 +6,7 @@ from typing import Optional
 from langfuse.utils.langfuse_singleton import LangfuseSingleton
 from langfuse.decorators import langfuse_context, observe
 from langfuse import Langfuse
+
 from langfuse.openai import _wrap_async, _wrap, _langfuse_wrapper, _is_openai_v1
 
 
@@ -45,36 +46,42 @@ UNIFY_METHODS_V0 = [
         object="ChatBot",
         method="run",
         sync=True,
+        type="chat",
     ),
     UnifyDefinition(
         module="unify.chat",
         object="ChatBot",
         method="set_endpoint",
         sync=True,
+        type="chat",
     ),
     UnifyDefinition(
         module="unify.clients",
         object="Unify",
         method="generate",
         sync=True,
+        type="completion",
     ),
     UnifyDefinition(
         module="unify.clients",
         object="AsyncUnify",
         method="generate",
         sync=False,
+        type="completion",
     ),
     UnifyDefinition(
         module="unify.clients",
         object="Unify",
         method="set_endpoint",
         sync=True,
+        type="completion",
     ),
     UnifyDefinition(
         module="unify.clients",
         object="AsyncUnify",
         method="set_endpoint",
         sync=False,
+        type="completion",
     ),
 ]
 
