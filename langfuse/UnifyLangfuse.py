@@ -109,6 +109,13 @@ GENERATION_DATA = [
         sync=False,
         type="completion",
     ),
+    UnifyDefinition(
+        module="unify.chat",
+        object="ChatBot",
+        method="run",
+        sync=True,
+        type="chat",
+    ),
 ]
 
 def update_generation_name(wrapped, instance, args, kwargs):
@@ -131,7 +138,10 @@ for resource in LANGFUSE_DATA:
 
 def wrap_unify_outputs(wrapped, instance, args, kwargs):
     def wrapper(*args, **kwargs):
-        output_dict = wrapped(*args, **kwargs).__dict__
+        if resource.type == "completion":
+            output_dict = {"text": wrapped(*args, **kwargs)}
+        if resource.type == "chat":
+            output_dict = {"message": wrapped(*args, **kwargs)}
         return output_dict
     return wrapper(*args, **kwargs)
 
