@@ -2,6 +2,7 @@
 # from langfuse.unify import openai
 from langfuse.UnifyLangfuse import unify, UnifyLangfuse
 from langfuse import Langfuse
+from langfuse.decorators import langfuse_context, observe
 import os
 from dotenv import load_dotenv
 
@@ -16,7 +17,7 @@ unify_api_key = os.getenv("UNIFY_API_KEY")
 print(unify.langfuse_host)
 
 from langfuse.decorators import langfuse_context, observe
-langfuse_context = UnifyLangfuse().initialize()
+langfuse = UnifyLangfuse().initialize()
 client = unify.Unify(endpoint="gpt-3.5-turbo@openai", api_key=unify_api_key)
 
 @observe() # decorator to automatically create trace and nest generations
@@ -48,7 +49,7 @@ def main(country: str, user_id: str, **kwargs) -> str:
         release = "v0.0.21"
     )
  
-    return poem
+    return poem.choices[0].text["content"]
  
 # create random trace_id, could also use existing id from your application, e.g. conversation id
 trace_id = "0"
