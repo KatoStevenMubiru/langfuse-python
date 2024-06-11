@@ -15,7 +15,6 @@ unify.langfuse_host = os.getenv("LANGFUSE_HOST")
 unify_api_key = os.getenv("UNIFY_API_KEY")
 print(unify.langfuse_host)
 
-from langfuse.openai import openai
 from langfuse.decorators import langfuse_context, observe
 langfuse_context = UnifyLangfuse().initialize()
 client = unify.Unify(endpoint="gpt-3.5-turbo@openai", api_key=unify_api_key)
@@ -28,12 +27,12 @@ def main(country: str, user_id: str, **kwargs) -> str:
     capital = client.generate(messages=[
           {"role": "system", "content": "You are a Geography teacher helping students learn the capitals of countries. Output only the capital when being asked."},
           {"role": "user", "content": country}])
- 
+    capital_input = capital.choices[0].text["content"]
     # nested generation 2: use openai to write poem on capital
     poem = client.generate(
        messages=[
           {"role": "system", "content": "You are a poet. Create a poem about a city."},
-          {"role": "user", "content": capital}]
+          {"role": "user", "content": capital_input}]
     )
  
     # rename trace and set attributes (e.g., medatata) as needed
