@@ -37,17 +37,17 @@ def main(country: str, user_id: str, **kwargs) -> str:
     )
  
     # rename trace and set attributes (e.g., medatata) as needed
-    langfuse_context.update_current_trace(
-        name="City poem generator",
-        session_id="1234",
-        user_id=user_id,
-        tags=["tag1", "tag2"],
-        public=True,
-        metadata = {
-        "env": "development",
-        },
-        release = "v0.0.21"
-    )
+    # langfuse_context.update_current_trace(
+    #     name="City poem generator",
+    #     session_id="1234",
+    #     user_id=user_id,
+    #     tags=["tag1", "tag2"],
+    #     public=True,
+    #     metadata = {
+    #     "env": "development",
+    #     },
+    #     release = "v0.0.21"
+    # )
  
     return poem.choices[0].text["content"]
  
