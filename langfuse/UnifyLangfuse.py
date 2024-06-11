@@ -120,9 +120,10 @@ GENERATION_DATA = [
 ]
 
 def update_generation_name(wrapped, instance, args, kwargs):
+    args[3]["name"] = "Unify-generation" if args[3].get("name") is None else args[3].get("name")
     def wrapper(*args, **kwargs):
+        
         generation, is_nested_trace = wrapped(*args, **kwargs)
-        generation["name"] = "Unify-generation"
 
         return generation, is_nested_trace
 
