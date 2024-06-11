@@ -20,7 +20,7 @@ from langfuse.decorators import langfuse_context, observe
 langfuse = UnifyLangfuse().initialize()
 client = unify.Unify(endpoint="gpt-3.5-turbo@openai", api_key=unify_api_key)
 
-@observe() # decorator to automatically create trace and nest generations
+# @observe() # decorator to automatically create trace and nest generations
 def main(country: str, user_id: str, **kwargs) -> str:
     # nested generation 1: use openai to get capital of country
     global client

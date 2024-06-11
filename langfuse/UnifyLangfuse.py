@@ -16,9 +16,9 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("langfuse.unify")
 
 # Conditional import for langfuse.openai
-if importlib.util.find_spec('langfuse.openai') is not None:
-    openai = __import__('langfuse.openai', fromlist=[None]).openai
-    sys.modules['openai']
+# if importlib.util.find_spec('langfuse.openai') is not None:
+#     openai = __import__('langfuse.openai', fromlist=[None]).openai
+#     sys.modules['openai']
 
 import unify
 
