@@ -8,7 +8,7 @@ from langfuse.utils.langfuse_singleton import LangfuseSingleton
 from langfuse.decorators import langfuse_context, observe
 from langfuse import Langfuse
 
-from langfuse.openai import _wrap_async, _wrap, _langfuse_wrapper, _is_openai_v1
+from .openai import _wrap_async, _wrap, _langfuse_wrapper, _is_openai_v1
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
