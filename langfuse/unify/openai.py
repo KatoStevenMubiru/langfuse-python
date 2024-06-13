@@ -622,11 +622,11 @@ class OpenAILangfuse:
 # modifier.register_tracing()
 
 
-def auth_check():
-    if modifier._langfuse is None:
-        modifier.initialize()
+# def auth_check():
+#     if modifier._langfuse is None:
+#         modifier.initialize()
 
-    return modifier._langfuse.auth_check()
+#     return modifier._langfuse.auth_check()
 
 
 def _filter_image_data(messages: List[dict]):
