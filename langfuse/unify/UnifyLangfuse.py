@@ -1,14 +1,11 @@
-import importlib
-import sys
 import logging
-from collections import OrderedDict
+import unify
 from wrapt import wrap_function_wrapper
 from typing import Optional
 from langfuse.utils.langfuse_singleton import LangfuseSingleton
-from langfuse.decorators import langfuse_context, observe
 from langfuse import Langfuse
 
-from .openai import _wrap_async, _wrap, _langfuse_wrapper, _is_openai_v1
+from .openai import _wrap_async, _wrap
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -19,7 +16,6 @@ log = logging.getLogger("langfuse.unify")
 #     openai = __import__('langfuse.openai', fromlist=[None]).openai
 #     sys.modules['openai']
 
-import unify
 
 class UnifyDefinition:
     model: Optional[str]
@@ -31,7 +27,16 @@ class UnifyDefinition:
     sync: bool
     type: str
 
-    def __init__(self, module: str, object: str, method: str, sync: bool, model: Optional[str] = None, provider: Optional[str] = None, type: Optional[str] = None):
+    def __init__(
+        self,
+        module: str,
+        object: str,
+        method: str,
+        sync: bool,
+        model: Optional[str] = None,
+        provider: Optional[str] = None,
+        type: Optional[str] = None,
+    ):
         self.module = module
         self.object = object
         self.method = method
@@ -39,6 +44,7 @@ class UnifyDefinition:
         self.model = model
         self.provider = provider
         self.type = type
+
 
 UNIFY_METHODS_V0 = [
     UnifyDefinition(
@@ -90,11 +96,11 @@ LANGFUSE_DATA = [
         module="langfuse.unify",
         object="openai",
         method="_get_langfuse_data_from_kwargs",
-        sync=False
+        sync=False,
     )
 ]
 
-GENERATION_DATA = [    
+GENERATION_DATA = [
     UnifyDefinition(
         module="unify.clients",
         object="Unify",
@@ -118,10 +124,13 @@ GENERATION_DATA = [
     ),
 ]
 
+
 def update_generation_name(wrapped, instance, args, kwargs):
-    args[3]["name"] = "Unify-generation" if args[3].get("name") is None else args[3].get("name")
+    args[3]["name"] = (
+        "Unify-generation" if args[3].get("name") is None else args[3].get("name")
+    )
+
     def wrapper(*args, **kwargs):
-        
         generation, is_nested_trace = wrapped(*args, **kwargs)
 
         return generation, is_nested_trace
@@ -131,9 +140,7 @@ def update_generation_name(wrapped, instance, args, kwargs):
 
 for resource in LANGFUSE_DATA:
     wrap_function_wrapper(
-        resource.module,
-        f"{resource.object}.{resource.method}",
-        update_generation_name
+        resource.module, f"{resource.object}.{resource.method}", update_generation_name
     )
 
 
@@ -145,22 +152,25 @@ class Completion(object):
 
 def wrap_unify_outputs(wrapped, instance, args, kwargs):
     def wrapper(*args, **kwargs):
-        usage = Completion({"promptTokens": None, "completionTokens": None, "totalTokens": None})
+        usage = Completion(
+            {"promptTokens": None, "completionTokens": None, "totalTokens": None}
+        )
         if resource.type == "completion":
             choices = Completion({"text": wrapped(*args, **kwargs)})
             output_dict = Completion({"choices": [choices], "usage": usage})
         if resource.type == "chat":
-            choices = Completion({"text": {"role": "assisstant", "content": wrapped(*args, **kwargs)}})
+            choices = Completion(
+                {"text": {"role": "assisstant", "content": wrapped(*args, **kwargs)}}
+            )
             output_dict = Completion({"choices": [choices], "usage": usage})
         return output_dict
+
     return wrapper(*args, **kwargs)
 
 
 for resource in GENERATION_DATA:
     wrap_function_wrapper(
-        resource.module,
-        f"{resource.object}.{resource.method}",
-        wrap_unify_outputs
+        resource.module, f"{resource.object}.{resource.method}", wrap_unify_outputs
     )
 
 
@@ -208,7 +218,9 @@ class UnifyLangfuse:
             wrap_function_wrapper(
                 resource.module,
                 f"{resource.object}.{resource.method}",
-                _wrap(resource, self.initialize) if resource.sync else _wrap_async(resource, self.initialize)
+                _wrap(resource, self.initialize)
+                if resource.sync
+                else _wrap_async(resource, self.initialize),
             )
 
         setattr(unify, "langfuse_public_key", None)
@@ -233,6 +245,7 @@ class UnifyLangfuse:
     #             return await original_function(*args, **kwargs)
     #         return wrapped
     #     return wrapper
+
 
 modifier = UnifyLangfuse()
 modifier.register_tracing()
