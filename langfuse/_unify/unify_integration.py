@@ -1,6 +1,6 @@
 import os
 import logging
-from langfuse.UnifyLangfuse import unify
+from langfuse.unify.UnifyLangfuse import unify
 from wrapt import wrap_function_wrapper
 from langfuse import Langfuse
 from langfuse.client import StatefulGenerationClient
