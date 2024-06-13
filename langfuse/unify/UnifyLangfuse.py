@@ -87,7 +87,7 @@ UNIFY_METHODS_V0 = [
 
 LANGFUSE_DATA = [
     UnifyDefinition(
-        module="langfuse",
+        module="langfuse.unify",
         object="openai",
         method="_get_langfuse_data_from_kwargs",
         sync=False

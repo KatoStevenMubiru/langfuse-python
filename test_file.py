@@ -1,6 +1,6 @@
 # from langfuse.unify import unify
 # from langfuse.unify import openai
-from langfuse.UnifyLangfuse import unify, UnifyLangfuse
+from langfuse.unify import unify, UnifyLangfuse
 from langfuse import Langfuse
 from langfuse.decorators import langfuse_context, observe
 import os
