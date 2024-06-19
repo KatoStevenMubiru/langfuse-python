@@ -16,9 +16,11 @@ The integration is fully interoperable with the `observe()` decorator and the lo
 
 See docs for more details: https://langfuse.com/docs/integrations/openai
 """
+
 from typing import Optional, List, Dict, Generator, AsyncGenerator
 from unify.exceptions import status_error_map
-from langfuse.openai import openai, auth_check, _filter_image_data
+from langfuse.utils.langfuse_singleton import LangfuseSingleton
+from langfuse.openai import openai, OpenAILangfuse
 
 try:
     import unify
@@ -29,13 +31,39 @@ except ImportError:
 
 from unify import Unify, AsyncUnify, ChatBot
 
+
+class UnifyLangfuse(OpenAILangfuse):
+    def initialize(self):
+        self._langfuse = LangfuseSingleton().get(
+            public_key=unify.langfuse_public_key,
+            secret_key=unify.langfuse_secret_key,
+            host=unify.langfuse_host,
+            debug=unify.langfuse_debug,
+            enabled=unify.langfuse_enabled,
+            sdk_integration="unify",
+        )
+        return self._langfuse
+
+    def reassign_tracing(self):
+        setattr(unify, "langfuse_public_key", openai.langfuse_public_key)
+        setattr(unify, "langfuse_secret_key", openai.langfuse_secret_key)
+        setattr(unify, "langfuse_host", openai.langfuse_host)
+        setattr(unify, "langfuse_debug", openai.langfuse_debug)
+        setattr(unify, "langfuse_enabled", openai.langfuse_enabled)
+        setattr(unify, "flush_langfuse", openai.flush_langfuse)
+
+
+modifier = UnifyLangfuse()
+modifier.reassign_tracing()
+
+
 class Unify(Unify):
     def __init__(
-            self,
-            endpoint: Optional[str] = None,
-            model: Optional[str] = None,
-            provider: Optional[str] = None,
-            api_key: Optional[str] = None,
+        self,
+        endpoint: Optional[str] = None,
+        model: Optional[str] = None,
+        provider: Optional[str] = None,
+        api_key: Optional[str] = None,
     ) -> None:
         super().__init__(endpoint, model, provider, api_key)
 
@@ -51,19 +79,21 @@ class Unify(Unify):
                 "provider": self.provider,
                 "endpoint": self.endpoint,
             },
-            **kwargs
+            **kwargs,
         )
         return chat_completion
 
     def _generate_stream(
-            self,
-            messages: List[Dict[str, str]],
-            endpoint: str,
-            max_tokens: Optional[int] = None,
-            **kwargs
+        self,
+        messages: List[Dict[str, str]],
+        endpoint: str,
+        max_tokens: Optional[int] = None,
+        **kwargs,
     ) -> Generator[str, None, None]:
         try:
-            chat_completion = self.generate_completion(endpoint, messages, max_tokens, True, **kwargs)
+            chat_completion = self.generate_completion(
+                endpoint, messages, max_tokens, True, **kwargs
+            )
 
             for chunk in chat_completion:
                 content = chunk.choices[0].delta.content  # type: ignore[union-attr]
@@ -78,10 +108,12 @@ class Unify(Unify):
         messages: List[Dict[str, str]],
         endpoint: str,
         max_tokens: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ) -> str:
         try:
-            chat_completion = self.generate_completion(endpoint, messages, max_tokens, False, **kwargs)
+            chat_completion = self.generate_completion(
+                endpoint, messages, max_tokens, False, **kwargs
+            )
 
             self.set_provider(
                 chat_completion.model.split(  # type: ignore[union-attr]
@@ -93,23 +125,24 @@ class Unify(Unify):
         except openai.APIStatusError as e:
             raise status_error_map[e.status_code](e.message) from None
 
+
 class AsyncUnify(AsyncUnify):
     def __init__(
-            self,
-            endpoint: Optional[str] = None,
-            model: Optional[str] = None,
-            provider: Optional[str] = None,
-            api_key: Optional[str] = None,
+        self,
+        endpoint: Optional[str] = None,
+        model: Optional[str] = None,
+        provider: Optional[str] = None,
+        api_key: Optional[str] = None,
     ) -> None:
         super().__init__(endpoint, model, provider, api_key)
 
     async def async_generate_completion(self, endpoint, messages, max_tokens, stream):
         chat_completion = await self.client.chat.completions.create(
-                model=endpoint,
-                messages=messages,  # type: ignore[arg-type]
-                max_tokens=max_tokens,
-                stream=stream,
-            )
+            model=endpoint,
+            messages=messages,  # type: ignore[arg-type]
+            max_tokens=max_tokens,
+            stream=stream,
+        )
 
         return chat_completion
 
@@ -150,16 +183,17 @@ class AsyncUnify(AsyncUnify):
         except openai.APIStatusError as e:
             raise status_error_map[e.status_code](e.message) from None
 
+
 class ChatBot(ChatBot):
     class ChatBot:  # noqa: WPS338
         """Agent class represents an LLM chat agent."""
 
         def __init__(
-                self,
-                endpoint: Optional[str] = None,
-                model: Optional[str] = None,
-                provider: Optional[str] = None,
-                api_key: Optional[str] = None,
+            self,
+            endpoint: Optional[str] = None,
+            model: Optional[str] = None,
+            provider: Optional[str] = None,
+            api_key: Optional[str] = None,
         ) -> None:
             super().__init__(endpoint, model, provider, api_key)
             self._client = Unify(
@@ -173,4 +207,3 @@ class ChatBot(ChatBot):
 unify.Unify = Unify
 unify.AsyncUnify = AsyncUnify
 unify.ChatBot = ChatBot
-
