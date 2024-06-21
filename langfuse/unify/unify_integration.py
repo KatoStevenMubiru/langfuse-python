@@ -20,7 +20,7 @@ See docs for more details: https://langfuse.com/docs/integrations/openai
 from typing import Optional, List, Dict, Generator, AsyncGenerator
 from unify.exceptions import status_error_map
 from langfuse.utils.langfuse_singleton import LangfuseSingleton
-from langfuse.openai import openai, OpenAILangfuse, auth_check, _filter_image_data
+from langfuse.openai import openai, OpenAILangfuse
 
 try:
     import unify
@@ -32,7 +32,7 @@ except ImportError:
 from unify import Unify, AsyncUnify, ChatBot
 
 
-class UnifyLangfuse(OpenAILangfuse):
+class OpenAILangfuse(OpenAILangfuse):
     def initialize(self):
         self._langfuse = LangfuseSingleton().get(
             public_key=unify.langfuse_public_key,
@@ -51,12 +51,9 @@ class UnifyLangfuse(OpenAILangfuse):
         setattr(unify, "langfuse_debug", openai.langfuse_debug)
         setattr(unify, "langfuse_enabled", openai.langfuse_enabled)
         setattr(unify, "flush_langfuse", openai.flush_langfuse)
-        setattr(unify, "auth_check", auth_check)
-        setattr(unify, "_filter_image_data", _filter_image_data)
 
 
-OpenAILangfuse.initialize = UnifyLangfuse.initialize
-modifier = UnifyLangfuse()
+modifier = OpenAILangfuse()
 modifier.reassign_tracing()
 
 
