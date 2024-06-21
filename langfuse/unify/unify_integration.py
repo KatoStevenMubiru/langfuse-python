@@ -54,6 +54,7 @@ class OpenAILangfuse(OpenAILangfuse):
 
 
 modifier = OpenAILangfuse()
+modifier.register_tracing()
 modifier.reassign_tracing()
 
 
