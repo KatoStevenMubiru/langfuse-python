@@ -7,7 +7,6 @@ from langfuse.decorators import observe
 
 
 load_dotenv()
-os.environ["LANGFUSE_PUBLIC_KEY"] = ""
 print(f"LangFuse Enabled: {unify.langfuse_enabled}")
 path = os.environ["PATH"]
 unify.langfuse_secret_key = os.getenv("LANGFUSE_SECRET_KEY")

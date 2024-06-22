@@ -18,13 +18,12 @@ See docs for more details: https://langfuse.com/docs/integrations/openai
 """
 
 from langfuse.utils.langfuse_singleton import LangfuseSingleton
+from langfuse.client import Langfuse
 from typing import Optional, List, Dict, Generator, AsyncGenerator
 from unify.exceptions import status_error_map
 from langfuse.openai import (
     openai,
     OpenAILangfuse,
-    auth_check,
-    _filter_image_data,
 )
 
 
@@ -37,11 +36,10 @@ except ImportError:
 
 from unify import Unify, AsyncUnify, ChatBot
 
-auth_check = auth_check
-_filter_image_data = _filter_image_data
-
 
 class UnifyLangfuse(OpenAILangfuse):
+    _langfuse: Optional[Langfuse] = None
+
     def initialize(self):
         self._langfuse = LangfuseSingleton().get(
             public_key=unify.langfuse_public_key,
