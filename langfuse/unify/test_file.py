@@ -3,6 +3,7 @@
 from unify_integration import unify, auth_check
 import os
 from dotenv import load_dotenv
+from langfuse.decorators import observe
 
 load_dotenv()
 print(f"LangFuse Enabled: {unify.langfuse_enabled}")
@@ -18,7 +19,7 @@ client = unify.Unify(
 )
 
 
-# @observe()  # decorator to automatically create trace and nest generations
+@observe()  # decorator to automatically create trace and nest generations
 def main(country: str, user_id: str, **kwargs) -> str:
     # nested generation 1: use openai to get capital of country
     global client
@@ -64,4 +65,4 @@ def main(country: str, user_id: str, **kwargs) -> str:
 trace_id = "0"
 
 # run main function, set your own id, and let Langfuse decorator do the rest
-print(main("Bulgaria", "admin", langfuse_observation_id=trace_id))
+print(main("Bulgaria", "admin"))
