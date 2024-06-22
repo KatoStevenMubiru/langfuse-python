@@ -29,7 +29,6 @@ from langfuse.openai import (
     OPENAI_METHODS_V0,
     OPENAI_METHODS_V1,
     _is_openai_v1,
-    modifier,
 )
 
 
@@ -52,6 +51,7 @@ def reassign_wrapper(wrapped, instance, args, kwargs):
     setattr(openai, "langfuse_host", unify.langfuse_host)
     setattr(openai, "langfuse_debug", unify.langfuse_debug)
     setattr(openai, "langfuse_enabled", unify.langfuse_enabled)
+    print(openai.langfuse_public_key)
     return wrapped(*args, **kwargs)
 
 
@@ -75,6 +75,7 @@ class UnifyLangfuse(OpenAILangfuse):
 
 
 setattr(OpenAILangfuse, "reregister_tracing", UnifyLangfuse.reregister_tracing)
+modifier = UnifyLangfuse()
 modifier.reregister_tracing()
 
 
