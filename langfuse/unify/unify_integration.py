@@ -66,14 +66,14 @@ def _unify_wrapper(func):
 
 @_unify_wrapper
 def _replacement_wrap(
-    open_ai_resource: OpenAiDefinition, initialize, wrapped, args, kwargs
+    replacer, open_ai_resource: OpenAiDefinition, initialize, wrapped, args, kwargs
 ):
     return _wrap(open_ai_resource, initialize, wrapped, args, kwargs)
 
 
 @_unify_wrapper
 def _replacement_wrap_async(
-    open_ai_resource: OpenAiDefinition, initialize, wrapped, args, kwargs
+    replacer, open_ai_resource: OpenAiDefinition, initialize, wrapped, args, kwargs
 ):
     return _wrap_async(open_ai_resource, initialize, wrapped, args, kwargs)
 
