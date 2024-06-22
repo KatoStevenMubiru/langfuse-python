@@ -1,19 +1,20 @@
 # from langfuse.unify import unify
 # from langfuse.unify import openai
-from unify_integration import unify, auth_check
+from unify_integration import unify
 import os
 from dotenv import load_dotenv
 from langfuse.decorators import observe
 
 load_dotenv()
+os.environ["LANGFUSE_PUBLIC_KEY"] = ""
 print(f"LangFuse Enabled: {unify.langfuse_enabled}")
 path = os.environ["PATH"]
 unify.langfuse_secret_key = os.getenv("LANGFUSE_SECRET_KEY")
-unify.langfuse_public_key = os.getenv("LANGFUSE_PUBLIC_KEY")
+unify.langfuse_public_key = os.getenv("LANGFUSE_PK")
 unify.langfuse_host = os.getenv("LANGFUSE_HOST")
 unify_api_key = os.getenv("UNIFY_API_KEY")
 print(f"LangFuse host: {unify.langfuse_host}")
-print(f"UnifyLangfuse auth_check: {auth_check()}")
+# print(f"UnifyLangfuse auth_check: {auth_check()}")
 client = unify.Unify(
     endpoint="mistral-7b-instruct-v0.2@fireworks-ai", api_key=unify_api_key
 )

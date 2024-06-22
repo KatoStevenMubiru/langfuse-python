@@ -19,8 +19,16 @@ See docs for more details: https://langfuse.com/docs/integrations/openai
 
 from typing import Optional, List, Dict, Generator, AsyncGenerator
 from unify.exceptions import status_error_map
-from langfuse.utils.langfuse_singleton import LangfuseSingleton
-from langfuse.openai import openai, OpenAILangfuse, auth_check, _filter_image_data
+from wrapt import wrap_function_wrapper
+import openai
+from langfuse.openai import (
+    OpenAILangfuse,
+    auth_check,
+    _filter_image_data,
+    OPENAI_METHODS_V0,
+    OPENAI_METHODS_V1,
+    _is_openai_v1,
+)
 
 
 try:
@@ -37,31 +45,38 @@ _filter_image_data = _filter_image_data
 
 
 class UnifyLangfuse(OpenAILangfuse):
-    _langfuse: Optional[LangfuseSingleton] = None
+    def reassign_wrapper(wrapped, instance, args, kwargs):
+        setattr(openai, "langfuse_public_key", unify.langfuse_public_key)
+        setattr(openai, "langfuse_secret_key", unify.langfuse_secret_key)
+        setattr(openai, "langfuse_host", unify.langfuse_host)
+        setattr(openai, "langfuse_debug", unify.langfuse_debug)
+        setattr(openai, "langfuse_enabled", unify.langfuse_enabled)
+        return wrapped(*args, **kwargs)
 
-    def initialize(self):
-        self._langfuse = LangfuseSingleton().get(
-            public_key=unify.langfuse_public_key,
-            secret_key=unify.langfuse_secret_key,
-            host=unify.langfuse_host,
-            debug=unify.langfuse_debug,
-            enabled=unify.langfuse_enabled,
-            sdk_integration="unify",
-        )
-        return self._langfuse
+    def reregister_tracing(self):
+        resources = OPENAI_METHODS_V1 if _is_openai_v1() else OPENAI_METHODS_V0
 
-    def reassign_tracing(self):
-        setattr(unify, "langfuse_public_key", openai.langfuse_public_key)
-        setattr(unify, "langfuse_secret_key", openai.langfuse_secret_key)
-        setattr(unify, "langfuse_host", openai.langfuse_host)
-        setattr(unify, "langfuse_debug", openai.langfuse_debug)
-        setattr(unify, "langfuse_enabled", openai.langfuse_enabled)
+        for resource in resources:
+            wrap_function_wrapper(
+                resource.module,
+                f"{resource.object}.{resource.method}",
+                UnifyLangfuse.reassign_wrapper,
+            )
+        print(openai.langfuse_public_key)
+
+    def unify_tracing(self):
+        setattr(unify, "langfuse_public_key", None)
+        setattr(unify, "langfuse_secret_key", None)
+        setattr(unify, "langfuse_host", None)
+        setattr(unify, "langfuse_debug", None)
+        setattr(unify, "langfuse_enabled", True)
         setattr(unify, "flush_langfuse", openai.flush_langfuse)
 
 
 OpenAILangfuse.initialize = UnifyLangfuse.initialize
 modifier = UnifyLangfuse()
-modifier.reassign_tracing()
+modifier.unify_tracing()
+modifier.reregister_tracing()
 
 
 class Unify(Unify):
