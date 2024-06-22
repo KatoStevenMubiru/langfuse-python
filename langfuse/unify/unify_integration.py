@@ -32,7 +32,12 @@ except ImportError:
 from unify import Unify, AsyncUnify, ChatBot
 
 
-class OpenAILangfuse(OpenAILangfuse):
+class UnifyLangfuse(OpenAILangfuse):
+    _langfuse: Optional[LangfuseSingleton] = None
+
+    def __init__(self):
+        super().__init__()
+
     def initialize(self):
         self._langfuse = LangfuseSingleton().get(
             public_key=unify.langfuse_public_key,
@@ -53,8 +58,7 @@ class OpenAILangfuse(OpenAILangfuse):
         setattr(unify, "flush_langfuse", openai.flush_langfuse)
 
 
-modifier = OpenAILangfuse()
-modifier.register_tracing()
+modifier = UnifyLangfuse()
 modifier.reassign_tracing()
 
 
