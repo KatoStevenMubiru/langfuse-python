@@ -20,14 +20,16 @@ See docs for more details: https://langfuse.com/docs/integrations/openai
 from typing import Optional, List, Dict, Generator, AsyncGenerator
 from unify.exceptions import status_error_map
 from wrapt import wrap_function_wrapper
-import openai
+
 from langfuse.openai import (
+    openai,
     OpenAILangfuse,
     auth_check,
     _filter_image_data,
     OPENAI_METHODS_V0,
     OPENAI_METHODS_V1,
     _is_openai_v1,
+    modifier,
 )
 
 
@@ -44,15 +46,16 @@ auth_check = auth_check
 _filter_image_data = _filter_image_data
 
 
-class UnifyLangfuse(OpenAILangfuse):
-    def reassign_wrapper(wrapped, instance, args, kwargs):
-        setattr(openai, "langfuse_public_key", unify.langfuse_public_key)
-        setattr(openai, "langfuse_secret_key", unify.langfuse_secret_key)
-        setattr(openai, "langfuse_host", unify.langfuse_host)
-        setattr(openai, "langfuse_debug", unify.langfuse_debug)
-        setattr(openai, "langfuse_enabled", unify.langfuse_enabled)
-        return wrapped(*args, **kwargs)
+def reassign_wrapper(wrapped, instance, args, kwargs):
+    setattr(openai, "langfuse_public_key", unify.langfuse_public_key)
+    setattr(openai, "langfuse_secret_key", unify.langfuse_secret_key)
+    setattr(openai, "langfuse_host", unify.langfuse_host)
+    setattr(openai, "langfuse_debug", unify.langfuse_debug)
+    setattr(openai, "langfuse_enabled", unify.langfuse_enabled)
+    return wrapped(*args, **kwargs)
 
+
+class UnifyLangfuse(OpenAILangfuse):
     def reregister_tracing(self):
         resources = OPENAI_METHODS_V1 if _is_openai_v1() else OPENAI_METHODS_V0
 
@@ -60,9 +63,9 @@ class UnifyLangfuse(OpenAILangfuse):
             wrap_function_wrapper(
                 resource.module,
                 f"{resource.object}.{resource.method}",
-                UnifyLangfuse.reassign_wrapper,
+                reassign_wrapper,
             )
-        print(openai.langfuse_public_key)
+
         setattr(unify, "langfuse_public_key", None)
         setattr(unify, "langfuse_secret_key", None)
         setattr(unify, "langfuse_host", None)
@@ -71,7 +74,7 @@ class UnifyLangfuse(OpenAILangfuse):
         setattr(unify, "flush_langfuse", openai.flush_langfuse)
 
 
-modifier = UnifyLangfuse()
+setattr(OpenAILangfuse, "reregister_tracing", UnifyLangfuse.reregister_tracing)
 modifier.reregister_tracing()
 
 
