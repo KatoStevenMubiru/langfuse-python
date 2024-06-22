@@ -20,9 +20,8 @@ See docs for more details: https://langfuse.com/docs/integrations/openai
 from typing import Optional, List, Dict, Generator, AsyncGenerator
 from unify.exceptions import status_error_map
 from wrapt import wrap_function_wrapper
-
+import openai
 from langfuse.openai import (
-    openai,
     OpenAILangfuse,
     auth_check,
     _filter_image_data,
@@ -76,6 +75,7 @@ class UnifyLangfuse(OpenAILangfuse):
 
 setattr(OpenAILangfuse, "reregister_tracing", UnifyLangfuse.reregister_tracing)
 modifier = UnifyLangfuse()
+modifier.register_tracing()
 modifier.reregister_tracing()
 
 
