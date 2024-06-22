@@ -19,15 +19,11 @@ See docs for more details: https://langfuse.com/docs/integrations/openai
 
 from typing import Optional, List, Dict, Generator, AsyncGenerator
 from unify.exceptions import status_error_map
-from wrapt import wrap_function_wrapper
-import openai
 from langfuse.openai import (
+    openai,
     OpenAILangfuse,
     auth_check,
     _filter_image_data,
-    OPENAI_METHODS_V0,
-    OPENAI_METHODS_V1,
-    _is_openai_v1,
 )
 
 
@@ -44,39 +40,18 @@ auth_check = auth_check
 _filter_image_data = _filter_image_data
 
 
-def reassign_wrapper(wrapped, instance, args, kwargs):
-    setattr(openai, "langfuse_public_key", unify.langfuse_public_key)
-    setattr(openai, "langfuse_secret_key", unify.langfuse_secret_key)
-    setattr(openai, "langfuse_host", unify.langfuse_host)
-    setattr(openai, "langfuse_debug", unify.langfuse_debug)
-    setattr(openai, "langfuse_enabled", unify.langfuse_enabled)
-    print(openai.langfuse_public_key)
-    return wrapped(*args, **kwargs)
-
-
 class UnifyLangfuse(OpenAILangfuse):
-    def reregister_tracing(self):
-        resources = OPENAI_METHODS_V1 if _is_openai_v1() else OPENAI_METHODS_V0
-
-        for resource in resources:
-            wrap_function_wrapper(
-                resource.module,
-                f"{resource.object}.{resource.method}",
-                reassign_wrapper,
-            )
-
+    def unify_tracing(self):
         setattr(unify, "langfuse_public_key", None)
         setattr(unify, "langfuse_secret_key", None)
         setattr(unify, "langfuse_host", None)
         setattr(unify, "langfuse_debug", None)
         setattr(unify, "langfuse_enabled", True)
-        setattr(unify, "flush_langfuse", openai.flush_langfuse)
+        setattr(unify, "flush_langfuse", self.flush)
 
 
-setattr(OpenAILangfuse, "reregister_tracing", UnifyLangfuse.reregister_tracing)
 modifier = UnifyLangfuse()
-modifier.register_tracing()
-modifier.reregister_tracing()
+modifier.unify_tracing()
 
 
 class Unify(Unify):
