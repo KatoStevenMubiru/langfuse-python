@@ -54,7 +54,7 @@ class UnifyLangfuse(OpenAILangfuse):
             enabled=unify.langfuse_enabled,
             sdk_integration="unify",
         )
-
+        print("UnifyLangfuse initialization")
         return self._langfuse
 
     def unify_tracing(self):
