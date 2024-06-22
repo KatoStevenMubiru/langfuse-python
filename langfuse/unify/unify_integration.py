@@ -63,8 +63,6 @@ class UnifyLangfuse(OpenAILangfuse):
                 UnifyLangfuse.reassign_wrapper,
             )
         print(openai.langfuse_public_key)
-
-    def unify_tracing(self):
         setattr(unify, "langfuse_public_key", None)
         setattr(unify, "langfuse_secret_key", None)
         setattr(unify, "langfuse_host", None)
@@ -73,9 +71,7 @@ class UnifyLangfuse(OpenAILangfuse):
         setattr(unify, "flush_langfuse", openai.flush_langfuse)
 
 
-OpenAILangfuse.initialize = UnifyLangfuse.initialize
 modifier = UnifyLangfuse()
-modifier.unify_tracing()
 modifier.reregister_tracing()
 
 
