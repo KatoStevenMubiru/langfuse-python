@@ -20,7 +20,8 @@ See docs for more details: https://langfuse.com/docs/integrations/openai
 from typing import Optional, List, Dict, Generator, AsyncGenerator
 from unify.exceptions import status_error_map
 from langfuse.utils.langfuse_singleton import LangfuseSingleton
-from langfuse.openai import openai, OpenAILangfuse
+from langfuse.openai import openai, OpenAILangfuse, auth_check, _filter_image_data
+
 
 try:
     import unify
@@ -30,6 +31,9 @@ except ImportError:
     )
 
 from unify import Unify, AsyncUnify, ChatBot
+
+auth_check = auth_check
+_filter_image_data = _filter_image_data
 
 
 class UnifyLangfuse(OpenAILangfuse):
