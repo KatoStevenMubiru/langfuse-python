@@ -1,11 +1,11 @@
 # from langfuse.unify import unify
 # from langfuse.unify import openai
-from unify_integration import unify
+from __init__ import unify
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
-print(f"LangFuse auth_check: {unify.auth_check()}")
+
 print(f"LangFuse Enabled: {unify.langfuse_enabled}")
 path = os.environ["PATH"]
 unify.langfuse_secret_key = os.getenv("LANGFUSE_SECRET_KEY")
