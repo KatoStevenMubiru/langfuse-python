@@ -17,6 +17,7 @@ The integration is fully interoperable with the `observe()` decorator and the lo
 See docs for more details: https://langfuse.com/docs/integrations/openai
 """
 
+from wrapt import wrap_function_wrapper
 from langfuse.utils.langfuse_singleton import LangfuseSingleton
 from langfuse.client import Langfuse
 from typing import Optional, List, Dict, Generator, AsyncGenerator
@@ -27,6 +28,11 @@ from langfuse.openai import (
     auth_check,
     _filter_image_data,
     OpenAiDefinition,
+    _wrap,
+    _wrap_async,
+    _is_openai_v1,
+    OPENAI_METHODS_V1,
+    OPENAI_METHODS_V0,
 )
 
 
@@ -59,9 +65,17 @@ def _unify_wrapper(func):
 
 
 @_unify_wrapper
-def replacement(
-    open_ai_resource: OpenAiDefinition, initialize, replacer, wrapped, args, kwargs
-): ...
+def _replacement_wrap(
+    open_ai_resource: OpenAiDefinition, initialize, wrapped, args, kwargs
+):
+    return _wrap(open_ai_resource, initialize, wrapped, args, kwargs)
+
+
+@_unify_wrapper
+def _replacement_wrap_async(
+    open_ai_resource: OpenAiDefinition, initialize, wrapped, args, kwargs
+):
+    return _wrap_async(open_ai_resource, initialize, wrapped, args, kwargs)
 
 
 class UnifyLangfuse(OpenAILangfuse):
@@ -80,6 +94,25 @@ class UnifyLangfuse(OpenAILangfuse):
         return self._langfuse
 
     def unify_tracing(self):
+        setattr(unify, "langfuse_public_key", None)
+        setattr(unify, "langfuse_secret_key", None)
+        setattr(unify, "langfuse_host", None)
+        setattr(unify, "langfuse_debug", None)
+        setattr(unify, "langfuse_enabled", True)
+        setattr(unify, "flush_langfuse", self.flush)
+
+    def reregister_tracing(self):
+        resources = OPENAI_METHODS_V1 if _is_openai_v1() else OPENAI_METHODS_V0
+
+        for resource in resources:
+            wrap_function_wrapper(
+                resource.module,
+                f"{resource.object}.{resource.method}",
+                _replacement_wrap(resource, self.initialize)
+                if resource.sync
+                else _replacement_wrap_async(resource, self.initialize),
+            )
+
         setattr(unify, "langfuse_public_key", None)
         setattr(unify, "langfuse_secret_key", None)
         setattr(unify, "langfuse_host", None)
