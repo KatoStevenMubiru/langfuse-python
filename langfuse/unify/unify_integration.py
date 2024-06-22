@@ -30,9 +30,6 @@ from langfuse.openai import (
     OpenAiDefinition,
     _wrap,
     _wrap_async,
-    _is_openai_v1,
-    OPENAI_METHODS_V1,
-    OPENAI_METHODS_V0,
 )
 
 
@@ -102,16 +99,17 @@ class UnifyLangfuse(OpenAILangfuse):
         setattr(unify, "flush_langfuse", self.flush)
 
     def reregister_tracing(self):
-        resources = OPENAI_METHODS_V1 if _is_openai_v1() else OPENAI_METHODS_V0
+        wrap_function_wrapper(
+            "langfuse.openai",
+            "_wrap",
+            _replacement_wrap(self.initialize),
+        )
 
-        for resource in resources:
-            wrap_function_wrapper(
-                resource.module,
-                f"{resource.object}.{resource.method}",
-                _replacement_wrap(resource, self.initialize)
-                if resource.sync
-                else _replacement_wrap_async(resource, self.initialize),
-            )
+        wrap_function_wrapper(
+            "langfuse.openai",
+            "_wrap_async",
+            _replacement_wrap_async(self.initialize),
+        )
 
         setattr(unify, "langfuse_public_key", None)
         setattr(unify, "langfuse_secret_key", None)
