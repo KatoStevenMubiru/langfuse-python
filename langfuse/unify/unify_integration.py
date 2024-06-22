@@ -55,8 +55,6 @@ class UnifyLangfuse(OpenAILangfuse):
         setattr(unify, "_filter_image_data", _filter_image_data)
 
 
-
-OpenAILangfuse.initialize = UnifyLangfuse.initialize
 modifier = UnifyLangfuse()
 modifier.reassign_tracing()
 
