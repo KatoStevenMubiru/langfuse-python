@@ -17,6 +17,7 @@ The integration is fully interoperable with the `observe()` decorator and the lo
 See docs for more details: https://langfuse.com/docs/integrations/openai
 """
 
+from langfuse.utils.langfuse_singleton import LangfuseSingleton
 from typing import Optional, List, Dict, Generator, AsyncGenerator
 from unify.exceptions import status_error_map
 from langfuse.openai import (
@@ -41,6 +42,18 @@ _filter_image_data = _filter_image_data
 
 
 class UnifyLangfuse(OpenAILangfuse):
+    def initialize(self):
+        self._langfuse = LangfuseSingleton().get(
+            public_key=unify.langfuse_public_key,
+            secret_key=unify.langfuse_secret_key,
+            host=unify.langfuse_host,
+            debug=unify.langfuse_debug,
+            enabled=unify.langfuse_enabled,
+            sdk_integration="unify",
+        )
+
+        return self._langfuse
+
     def unify_tracing(self):
         setattr(unify, "langfuse_public_key", None)
         setattr(unify, "langfuse_secret_key", None)
@@ -50,6 +63,7 @@ class UnifyLangfuse(OpenAILangfuse):
         setattr(unify, "flush_langfuse", self.flush)
 
 
+OpenAILangfuse.initialize = UnifyLangfuse.initialize
 modifier = UnifyLangfuse()
 modifier.unify_tracing()
 
