@@ -26,6 +26,7 @@ from langfuse.openai import (
     OpenAILangfuse,
     auth_check,
     _filter_image_data,
+    OpenAiDefinition,
 )
 
 
@@ -40,6 +41,27 @@ from unify import Unify, AsyncUnify, ChatBot
 
 auth_check = auth_check
 _filter_image_data = _filter_image_data
+
+
+def _unify_wrapper(func):
+    def replace_init(replacer):
+        def _with_langfuse(open_ai_resource, initialize):
+            initialize = replacer
+
+            def wrapper(wrapped, instance, args, kwargs):
+                return func(open_ai_resource, initialize, wrapped, args, kwargs)
+
+            return wrapper
+
+        return _with_langfuse
+
+    return replace_init
+
+
+@_unify_wrapper
+def replacement(
+    open_ai_resource: OpenAiDefinition, initialize, replacer, wrapped, args, kwargs
+): ...
 
 
 class UnifyLangfuse(OpenAILangfuse):
