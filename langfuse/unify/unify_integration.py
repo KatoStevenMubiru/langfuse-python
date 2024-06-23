@@ -119,7 +119,7 @@ class UnifyLangfuse(OpenAILangfuse):
         setattr(unify, "flush_langfuse", self.flush)
 
 
-OpenAILangfuse.initialize = UnifyLangfuse.initialize
+# OpenAILangfuse.initialize = UnifyLangfuse.initialize
 modifier = UnifyLangfuse()
 modifier.reregister_tracing()
 
