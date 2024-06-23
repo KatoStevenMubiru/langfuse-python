@@ -1,6 +1,6 @@
 # from langfuse.unify import unify
 # from langfuse.unify import openai
-from unify_integration import unify
+from langfuse.unify import unify
 import os
 from dotenv import load_dotenv
 from langfuse.decorators import observe
