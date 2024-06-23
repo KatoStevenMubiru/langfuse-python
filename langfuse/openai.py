@@ -592,7 +592,6 @@ class OpenAILangfuse:
             enabled=openai.langfuse_enabled,
             sdk_integration="openai",
         )
-
         return self._langfuse
 
     def flush(cls):
