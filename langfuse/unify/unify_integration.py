@@ -100,6 +100,8 @@ class Unify(Unify):
         api_key: Optional[str] = None,
     ) -> None:
         super().__init__(endpoint, model, provider, api_key)
+        if modifier._langfuse is None:
+            modifier.initialize()
 
     def generate_completion(self, endpoint, messages, max_tokens, stream, **kwargs):
         chat_completion = self.client.chat.completions.create(
