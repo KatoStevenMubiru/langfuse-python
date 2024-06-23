@@ -121,7 +121,7 @@ class UnifyLangfuse(OpenAILangfuse):
 
 OpenAILangfuse.initialize = UnifyLangfuse.initialize
 modifier = UnifyLangfuse()
-modifier.unify_tracing()
+modifier.reregister_tracing()
 
 
 class Unify(Unify):
