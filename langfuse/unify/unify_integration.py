@@ -16,9 +16,24 @@ The integration is fully interoperable with the `observe()` decorator and the lo
 
 See docs for more details: https://langfuse.com/docs/integrations/openai
 """
+
+from wrapt import resolve_path
+from types import MethodType
 from typing import Optional, List, Dict, Generator, AsyncGenerator
+from langfuse.openai import (
+    openai,
+    modifier,
+    _is_openai_v1,
+    OPENAI_METHODS_V1,
+    OPENAI_METHODS_V0,
+    wrap_function_wrapper,
+    _wrap,
+    _wrap_async,
+    auth_check,
+    _filter_image_data
+)
+from langfuse.utils.langfuse_singleton import LangfuseSingleton
 from unify.exceptions import status_error_map
-from langfuse.openai import openai, auth_check, _filter_image_data
 
 try:
     import unify
@@ -29,13 +44,60 @@ except ImportError:
 
 from unify import Unify, AsyncUnify, ChatBot
 
+
+def unify_initialize(self):
+    self._langfuse = LangfuseSingleton().get(
+        public_key=unify.langfuse_public_key,
+        secret_key=unify.langfuse_secret_key,
+        host=unify.langfuse_host,
+        debug=unify.langfuse_debug,
+        enabled=unify.langfuse_enabled,
+        sdk_integration="unify",
+    )
+    return self._langfuse
+
+
+def unify_register_tracing(self):
+    resources = OPENAI_METHODS_V1 if _is_openai_v1() else OPENAI_METHODS_V0
+
+    for resource in resources:
+        parent, attribute, wrapper = resolve_path(
+            resource.module,
+            f"{resource.object}.{resource.method}"
+        )
+
+        # revert to original function
+        original = wrapper.__wrapped__
+        setattr(parent, attribute, original)
+
+        wrap_function_wrapper(
+            resource.module,
+            f"{resource.object}.{resource.method}",
+            _wrap(resource, self.initialize)
+            if resource.sync
+            else _wrap_async(resource, self.initialize),
+        )
+
+    setattr(unify, "langfuse_public_key", None)
+    setattr(unify, "langfuse_secret_key", None)
+    setattr(unify, "langfuse_host", None)
+    setattr(unify, "langfuse_debug", None)
+    setattr(unify, "langfuse_enabled", True)
+    setattr(unify, "flush_langfuse", self.flush)
+
+
+modifier.initialize = MethodType(unify_initialize, modifier)
+modifier.register_tracing = MethodType(unify_register_tracing, modifier)
+modifier.register_tracing()
+
+
 class Unify(Unify):
     def __init__(
-            self,
-            endpoint: Optional[str] = None,
-            model: Optional[str] = None,
-            provider: Optional[str] = None,
-            api_key: Optional[str] = None,
+        self,
+        endpoint: Optional[str] = None,
+        model: Optional[str] = None,
+        provider: Optional[str] = None,
+        api_key: Optional[str] = None,
     ) -> None:
         super().__init__(endpoint, model, provider, api_key)
 
@@ -48,22 +110,24 @@ class Unify(Unify):
             name="Unify-generation",
             metadata={
                 "model": self.model,
-                "provider": self.provider,
+                "provider": self.provider,  # todo: update trace metadata after call (see set_provider)
                 "endpoint": self.endpoint,
             },
-            **kwargs
+            **kwargs,
         )
         return chat_completion
 
     def _generate_stream(
-            self,
-            messages: List[Dict[str, str]],
-            endpoint: str,
-            max_tokens: Optional[int] = None,
-            **kwargs
+        self,
+        messages: List[Dict[str, str]],
+        endpoint: str,
+        max_tokens: Optional[int] = None,
+        **kwargs,
     ) -> Generator[str, None, None]:
         try:
-            chat_completion = self.generate_completion(endpoint, messages, max_tokens, True, **kwargs)
+            chat_completion = self.generate_completion(
+                endpoint, messages, max_tokens, True, **kwargs
+            )
 
             for chunk in chat_completion:
                 content = chunk.choices[0].delta.content  # type: ignore[union-attr]
@@ -78,10 +142,12 @@ class Unify(Unify):
         messages: List[Dict[str, str]],
         endpoint: str,
         max_tokens: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ) -> str:
         try:
-            chat_completion = self.generate_completion(endpoint, messages, max_tokens, False, **kwargs)
+            chat_completion = self.generate_completion(
+                endpoint, messages, max_tokens, False, **kwargs
+            )
 
             self.set_provider(
                 chat_completion.model.split(  # type: ignore[union-attr]
@@ -93,23 +159,24 @@ class Unify(Unify):
         except openai.APIStatusError as e:
             raise status_error_map[e.status_code](e.message) from None
 
+
 class AsyncUnify(AsyncUnify):
     def __init__(
-            self,
-            endpoint: Optional[str] = None,
-            model: Optional[str] = None,
-            provider: Optional[str] = None,
-            api_key: Optional[str] = None,
+        self,
+        endpoint: Optional[str] = None,
+        model: Optional[str] = None,
+        provider: Optional[str] = None,
+        api_key: Optional[str] = None,
     ) -> None:
         super().__init__(endpoint, model, provider, api_key)
 
     async def async_generate_completion(self, endpoint, messages, max_tokens, stream):
         chat_completion = await self.client.chat.completions.create(
-                model=endpoint,
-                messages=messages,  # type: ignore[arg-type]
-                max_tokens=max_tokens,
-                stream=stream,
-            )
+            model=endpoint,
+            messages=messages,  # type: ignore[arg-type]
+            max_tokens=max_tokens,
+            stream=stream,
+        )
 
         return chat_completion
 
@@ -150,16 +217,17 @@ class AsyncUnify(AsyncUnify):
         except openai.APIStatusError as e:
             raise status_error_map[e.status_code](e.message) from None
 
+
 class ChatBot(ChatBot):
     class ChatBot:  # noqa: WPS338
         """Agent class represents an LLM chat agent."""
 
         def __init__(
-                self,
-                endpoint: Optional[str] = None,
-                model: Optional[str] = None,
-                provider: Optional[str] = None,
-                api_key: Optional[str] = None,
+            self,
+            endpoint: Optional[str] = None,
+            model: Optional[str] = None,
+            provider: Optional[str] = None,
+            api_key: Optional[str] = None,
         ) -> None:
             super().__init__(endpoint, model, provider, api_key)
             self._client = Unify(
@@ -173,4 +241,3 @@ class ChatBot(ChatBot):
 unify.Unify = Unify
 unify.AsyncUnify = AsyncUnify
 unify.ChatBot = ChatBot
-
