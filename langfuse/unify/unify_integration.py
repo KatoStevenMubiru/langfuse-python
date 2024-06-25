@@ -171,6 +171,8 @@ class AsyncUnify(AsyncUnify):
         api_key: Optional[str] = None,
     ) -> None:
         super().__init__(endpoint, model, provider, api_key)
+        if modifier._langfuse is None:
+            modifier.initialize()
 
     async def async_generate_completion(self, endpoint, messages, max_tokens, stream):
         chat_completion = await self.client.chat.completions.create(
@@ -238,6 +240,9 @@ class ChatBot(ChatBot):
                 model=model,
                 provider=provider,
             )
+
+            if modifier._langfuse is None:
+                modifier.initialize()
 
 
 unify.Unify = Unify
