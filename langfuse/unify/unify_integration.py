@@ -223,26 +223,23 @@ class AsyncUnify(AsyncUnify):
 
 
 class ChatBot(ChatBot):
-    class ChatBot:  # noqa: WPS338
-        """Agent class represents an LLM chat agent."""
+    def __init__(
+        self,
+        endpoint: Optional[str] = None,
+        model: Optional[str] = None,
+        provider: Optional[str] = None,
+        api_key: Optional[str] = None,
+    ) -> None:
+        super().__init__(endpoint, model, provider, api_key)
+        self._client = Unify(
+            api_key=api_key,
+            endpoint=endpoint,
+            model=model,
+            provider=provider,
+        )
 
-        def __init__(
-            self,
-            endpoint: Optional[str] = None,
-            model: Optional[str] = None,
-            provider: Optional[str] = None,
-            api_key: Optional[str] = None,
-        ) -> None:
-            super().__init__(endpoint, model, provider, api_key)
-            self._client = Unify(
-                api_key=api_key,
-                endpoint=endpoint,
-                model=model,
-                provider=provider,
-            )
-
-            if modifier._langfuse is None:
-                modifier.initialize()
+        if modifier._langfuse is None:
+            modifier.initialize()
 
 
 unify.Unify = Unify
