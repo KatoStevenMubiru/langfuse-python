@@ -23,12 +23,11 @@ from typing import Optional, List, Dict, Generator, AsyncGenerator
 from langfuse.openai import (
     openai,
     modifier,
-    _is_openai_v1,
     OPENAI_METHODS_V1,
-    OPENAI_METHODS_V0,
     wrap_function_wrapper,
     _wrap,
     _wrap_async,
+    OpenAiDefinition,
     auth_check,
     _filter_image_data
 )
@@ -44,6 +43,15 @@ except ImportError:
 
 from unify import Unify, AsyncUnify, ChatBot
 
+LANGFUSE_DATA = [
+    OpenAiDefinition(
+        module="langfuse",
+        object="openai",
+        method="_get_langfuse_data_from_default_response",
+        type="",
+        sync=False
+    )
+]
 
 def unify_initialize(self):
     self._langfuse = LangfuseSingleton().get(
@@ -58,9 +66,7 @@ def unify_initialize(self):
 
 
 def unify_register_tracing(self):
-    resources = OPENAI_METHODS_V1 if _is_openai_v1() else OPENAI_METHODS_V0
-
-    for resource in resources:
+    for resource in OPENAI_METHODS_V1:
         parent, attribute, wrapper = resolve_path(
             resource.module,
             f"{resource.object}.{resource.method}"
@@ -103,7 +109,21 @@ class Unify(Unify):
         if modifier._langfuse is None:
             modifier.initialize()
 
+        self.c1 = 0.0
+        self.c2 = 0.0
+        self.total_cost = 0.0
+
+        # manually ingest cost,
+        for resource in LANGFUSE_DATA:
+            wrap_function_wrapper(
+                resource.module,
+                f"{resource.object}.{resource.method}",
+                self.update_cost
+            )
+
     def generate_completion(self, endpoint, messages, max_tokens, stream, **kwargs):
+        self.c1 = self.get_credit_balance()
+
         chat_completion = self.client.chat.completions.create(
             model=endpoint,
             messages=messages,  # type: ignore[arg-type]
@@ -117,7 +137,22 @@ class Unify(Unify):
             },
             **kwargs,
         )
+
         return chat_completion
+
+    def update_cost(self, wrapped, instance, args, kwargs):
+        self.c2 = self.get_credit_balance()
+        self.total_cost = self.c1 - self.c2
+        def wrapper(*args, **kwargs):
+            # add usage total_costs
+            # use provider.input_cost, provider.output_cost when available
+            model, completion, usage = wrapped(*args, **kwargs)
+            usage["total_cost"] = self.total_cost
+
+            return model, completion, usage
+
+        return wrapper(*args, **kwargs)
+
 
     def _generate_stream(
         self,
@@ -189,6 +224,7 @@ class AsyncUnify(AsyncUnify):
         messages: List[Dict[str, str]],
         endpoint: str,
         max_tokens: Optional[int] = None,
+        **kwargs,
     ) -> AsyncGenerator[str, None]:
         try:
             async_stream = self.async_generate_completion(
@@ -208,6 +244,7 @@ class AsyncUnify(AsyncUnify):
         messages: List[Dict[str, str]],
         endpoint: str,
         max_tokens: Optional[int] = None,
+        **kwargs,
     ) -> str:
         try:
             async_response = self.async_generate_completion(
