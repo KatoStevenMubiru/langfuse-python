@@ -20,6 +20,8 @@ See docs for more details: https://langfuse.com/docs/integrations/openai
 from wrapt import resolve_path
 from types import MethodType
 from typing import Optional, List, Dict, Generator, AsyncGenerator
+
+from langfuse.client import StatefulGenerationClient
 from langfuse.openai import (
     openai,
     modifier,
@@ -28,8 +30,10 @@ from langfuse.openai import (
     _wrap,
     _wrap_async,
     OpenAiDefinition,
+    _is_openai_v1,
+    OPENAI_METHODS_V0,
     auth_check,
-    _filter_image_data
+    _filter_image_data,
 )
 from langfuse.utils.langfuse_singleton import LangfuseSingleton
 from unify.exceptions import status_error_map
@@ -43,11 +47,11 @@ except ImportError:
 
 from unify import Unify, AsyncUnify, ChatBot
 
-LANGFUSE_DATA = [
+GENERATION_DATA = [
     OpenAiDefinition(
         module="langfuse",
-        object="openai",
-        method="_get_langfuse_data_from_default_response",
+        object="client.Langfuse",
+        method="generation",
         type="",
         sync=False
     )
@@ -66,7 +70,9 @@ def unify_initialize(self):
 
 
 def unify_register_tracing(self):
-    for resource in OPENAI_METHODS_V1:
+    resources = OPENAI_METHODS_V1 if _is_openai_v1() else OPENAI_METHODS_V0
+
+    for resource in resources:
         parent, attribute, wrapper = resolve_path(
             resource.module,
             f"{resource.object}.{resource.method}"
@@ -106,50 +112,46 @@ class Unify(Unify):
         api_key: Optional[str] = None,
     ) -> None:
         super().__init__(endpoint, model, provider, api_key)
-        if modifier._langfuse is None:
-            modifier.initialize()
 
         self.c1 = 0.0
         self.c2 = 0.0
-        self.total_cost = 0.0
+        self.generation: Optional[StatefulGenerationClient] = None
 
-        # manually ingest cost,
-        for resource in LANGFUSE_DATA:
+        # enable unify langfuse properties
+        if modifier._langfuse is None:
+            modifier.initialize()
+
+        # capture generation
+        for resource in GENERATION_DATA:
             wrap_function_wrapper(
                 resource.module,
                 f"{resource.object}.{resource.method}",
-                self.update_cost
+                self.get_generation
             )
 
     def generate_completion(self, endpoint, messages, max_tokens, stream, **kwargs):
         self.c1 = self.get_credit_balance()
 
         chat_completion = self.client.chat.completions.create(
+            name="Unify-generation",
             model=endpoint,
             messages=messages,  # type: ignore[arg-type]
             max_tokens=max_tokens,
             stream=stream,
-            name="Unify-generation",
-            metadata={
-                "model": self.model,
-                "provider": self.provider,  # todo: update trace metadata after call (see set_provider)
-                "endpoint": self.endpoint,
-            },
             **kwargs,
         )
 
         return chat_completion
 
-    def update_cost(self, wrapped, instance, args, kwargs):
-        self.c2 = self.get_credit_balance()
-        self.total_cost = self.c1 - self.c2
-        def wrapper(*args, **kwargs):
-            # add usage total_costs
-            # use provider.input_cost, provider.output_cost when available
-            model, completion, usage = wrapped(*args, **kwargs)
-            usage["total_cost"] = self.total_cost
+    def total_cost(self):
+        return self.c1 - self.c2
 
-            return model, completion, usage
+    def get_generation(self, wrapped, instance, args, kwargs):
+        def wrapper(*args, **kwargs):
+            generation = wrapped(*args, **kwargs)
+            self.generation = generation
+
+            return generation
 
         return wrapper(*args, **kwargs)
 
@@ -171,6 +173,19 @@ class Unify(Unify):
                 self.set_provider(chunk.model.split("@")[-1])  # type: ignore[union-attr]
                 if content is not None:
                     yield content
+
+            self.c2 = self.get_credit_balance()
+            usage = {"input_cost": 0, "output_cost": 0, "total_cost": self.total_cost()}
+
+            self.generation.update(
+                metadata={
+                    "model": self.model,
+                    "provider": self.provider,
+                    "endpoint": self.endpoint,
+                },
+                usage=usage
+            )
+
         except openai.APIStatusError as e:
             raise status_error_map[e.status_code](e.message) from None
 
@@ -190,6 +205,18 @@ class Unify(Unify):
                 chat_completion.model.split(  # type: ignore[union-attr]
                     "@",
                 )[-1]
+            )
+
+            usage = chat_completion.usage.to_dict()
+            usage["total_cost"] = usage["cost"]
+
+            self.generation.update(
+                metadata={
+                    "model": self.model,
+                    "provider": self.provider,
+                    "endpoint": self.endpoint,
+                },
+                usage=usage
             )
 
             return chat_completion.choices[0].message.content.strip(" ")  # type: ignore # noqa: E501, WPS219
