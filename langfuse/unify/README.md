@@ -11,7 +11,7 @@ If you use the Unify Python package, you can use the Langfuse drop-in replacemen
 + from langfuse.unify import Unify
 ```
 
-This reqiures you to have the unify package installed
+This requires you to have the unify package installed
 ```
 pip install unifyai
 ```
