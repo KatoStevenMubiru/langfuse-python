@@ -15,13 +15,20 @@ This requires you to have the unify package installed
 ```
 pip install unifyai
 ```
+## Features
+Langfuse automatically tracks:
+
+All prompts/completions with support for streaming, async and functions
+Latencies
+API Errors
+Model usage (tokens) and cost (USD)
 
 ## Example Usage:
 
 ```python
 from langfuse.unify import Unify
 from langfuse.decorators import observe
-
+## Set Environment Variables
 unify.langfuse_secret_key = os.environ["LANGFUSE_SECRET_KEY"]
 unify.langfuse_public_key = os.environ["LANGFUSE_PUBLIC_KEY"]
 unify.langfuse_host = os.environ["LANGFUSE_HOST"]
