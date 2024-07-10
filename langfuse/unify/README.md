@@ -1,4 +1,4 @@
-# Langfuse x Unify
+# Langfuse x Unify Integration
 
 [Unify](https://unify.ai/) is your central platform for LLM deployment. 🚀
 
