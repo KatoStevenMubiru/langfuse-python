@@ -19,9 +19,9 @@ pip install unifyai
 Langfuse automatically tracks:
 
 All prompts/completions with support for streaming, async and functions
-Latencies
-API Errors
-Model usage (tokens) and cost (USD)
+- Latencies
+- API Errors
+- Model usage (tokens) and cost (USD)
 
 ## Example Usage:
 
