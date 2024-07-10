@@ -54,7 +54,8 @@ main()
 ## Additional Features
 This integration supports:
 
-Unify
-AsyncUnify
-ChatBot
+- Unify
+- AsyncUnify
+- ChatBot
+
 All these classes can be imported from ```langfuse.unify```
